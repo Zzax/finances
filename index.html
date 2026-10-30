@@ -1,0 +1,793 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#000000">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Finances">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Mes finances</title>
+<style>
+  :root{color-scheme:dark;--bg:#000;--card:#07070d;--txt:#eaf6ff;--mut:#7f8aa3;--line:#1c2236;--acc:#00e5ff;--in:#39ff88;--out:#ff2e88;--pink:#ff2e88;--cyan:#00e5ff}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--txt);background:radial-gradient(900px 500px at 10% -10%,rgba(0,229,255,.12),transparent 60%),radial-gradient(800px 500px at 100% 0,rgba(255,46,136,.12),transparent 60%),#000;background-attachment:fixed;min-height:100vh}
+  .wrap{max-width:980px;margin:0 auto;padding:16px}
+  header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:16px}
+  h1{font-size:1.4rem;margin:0;color:#fff;text-shadow:0 0 6px var(--cyan),0 0 18px var(--cyan),0 0 36px rgba(0,229,255,.6);letter-spacing:.5px}
+  .card{background:var(--card);border:1px solid rgba(0,229,255,.35);border-radius:14px;padding:16px;margin-bottom:16px;box-shadow:0 0 0 1px rgba(0,229,255,.06) inset,0 0 14px rgba(0,229,255,.18)}
+  .card h2{font-size:.85rem;margin:0 0 12px;color:var(--cyan);text-shadow:0 0 8px rgba(0,229,255,.7);text-transform:uppercase;letter-spacing:1.5px}
+  .grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+  .stats{display:grid;gap:12px;grid-template-columns:repeat(3,1fr)}
+  .stat small{color:var(--mut);display:block}
+  .stat b{font-size:1.5rem;text-shadow:0 0 10px currentColor}
+  .in{color:var(--in)}.out{color:var(--out)}
+  input,select,button{font:inherit;padding:9px 10px;border-radius:9px;border:1px solid #26304d;background:#05060b;color:var(--txt)}
+  input:focus,select:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 10px rgba(0,229,255,.6)}
+  button{cursor:pointer;background:var(--card)}
+  button:hover{border-color:var(--cyan);box-shadow:0 0 10px rgba(0,229,255,.5)}
+  button:disabled{opacity:.5;cursor:wait}
+  button.primary{background:linear-gradient(90deg,#00e5ff,#a855f7 55%,#ff2e88);color:#000;border:0;font-weight:600;box-shadow:0 0 14px rgba(168,85,247,.7),0 0 28px rgba(0,229,255,.35)}
+  button.primary:hover{box-shadow:0 0 20px rgba(255,46,136,.8),0 0 40px rgba(0,229,255,.5)}
+  button.ghost{background:transparent}
+  form{display:grid;gap:8px;grid-template-columns:1fr 1fr}
+  form .full{grid-column:1/-1}
+  .seg{display:flex;gap:6px;grid-column:1/-1}
+  .seg label{flex:1;text-align:center;padding:9px;border:1px solid var(--line);border-radius:9px;cursor:pointer}
+  .seg input{display:none}
+  .seg input:checked+span{font-weight:700}
+  .seg label:has(input:checked){border-color:var(--cyan);background:rgba(0,229,255,.1);box-shadow:0 0 10px rgba(0,229,255,.5);color:var(--cyan)}
+  ul{list-style:none;margin:0;padding:0}
+  li.tx{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #141a2e}
+  li.tx:last-child{border:0}
+  .tx .m{flex:1;min-width:0}
+  .tx .m div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tx small{color:var(--mut)}
+  .tx b{text-shadow:0 0 8px currentColor}
+  .x{border:0;background:transparent;color:var(--mut);font-size:1.1rem;padding:4px 8px}
+  .x:hover{color:var(--pink);text-shadow:0 0 8px var(--pink);box-shadow:none}
+  .bar{height:8px;background:#0d1224;border-radius:99px;overflow:hidden;margin-top:4px}
+  .bar i{display:block;height:100%;background:linear-gradient(90deg,#00e5ff,#a855f7);border-radius:99px;box-shadow:0 0 10px rgba(0,229,255,.8)}
+  .bar i.over{background:linear-gradient(90deg,#ff2e88,#ff5c5c);box-shadow:0 0 10px rgba(255,46,136,.9)}
+  .row{display:flex;justify-content:space-between;gap:8px;font-size:.92rem}
+  .bud{margin-bottom:12px}
+  .bud input{width:90px;padding:4px 6px;text-align:right}
+  .legend{display:flex;flex-wrap:wrap;gap:8px 14px;margin-top:10px;font-size:.85rem}
+  .legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--c);margin-right:6px;box-shadow:0 0 8px var(--c)}
+  .empty{color:var(--mut);text-align:center;padding:18px 0}
+  svg text{fill:currentColor}
+  #chart svg{filter:drop-shadow(0 0 6px rgba(168,85,247,.6))}
+  #chart svg text{fill:#fff}
+
+  .rform{grid-template-columns:repeat(auto-fit,minmax(140px,1fr));margin-bottom:12px}
+  .rform input,.rform select{width:100%}
+  header{flex-wrap:nowrap;margin-bottom:12px}
+  .hbtns{display:flex;gap:8px;align-items:center;min-width:0}
+  header h1{white-space:nowrap}
+  #who{max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px}
+  button.icon{width:40px;height:40px;padding:0;display:inline-flex;align-items:center;justify-content:center}
+  button.icon svg{width:20px;height:20px}
+  #lockBtn{color:var(--cyan);border-color:rgba(0,229,255,.45)}
+  #logout{color:var(--pink);border-color:rgba(255,46,136,.45)}
+  #logout:hover{border-color:var(--pink);box-shadow:0 0 10px rgba(255,46,136,.5)}
+  .monthnav{display:flex;gap:8px;align-items:center;justify-content:center;margin-bottom:16px}
+  .monthnav button{width:44px;height:40px;padding:0;font-size:1.3rem;line-height:1}
+  .monthnav input{flex:1;min-width:0;max-width:280px;height:40px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+  .chip{display:inline-flex;align-items:center;border:1px solid #26304d;border-radius:99px;padding:2px 4px 2px 12px;background:#05060b}
+  .chip .nm{cursor:pointer}
+  .chip button{border:0;background:transparent;padding:4px 8px;color:var(--mut)}
+  .chip button:hover{box-shadow:none;color:var(--pink)}
+  .catform{grid-template-columns:minmax(0,1fr) auto;margin-bottom:14px}
+  .catform input{min-width:0;width:100%}
+  .banner{display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-color:rgba(255,230,0,.55);box-shadow:0 0 14px rgba(255,230,0,.2)}
+  .banner[hidden]{display:none}
+  .ystats{display:grid;gap:12px;grid-template-columns:repeat(3,1fr);margin-top:12px}
+  .ystats .stat b{font-size:1.05rem}
+  #editTx{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto;z-index:9;background:rgba(0,0,0,.88)}
+  #editTx[hidden]{display:none}
+  #ef input,#ef select{width:100%}
+
+  /* Écrans de connexion / PIN */
+  #auth,#pinLock,#pinSetup{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto;z-index:10;background:radial-gradient(800px 500px at 10% -10%,rgba(0,229,255,.18),transparent 60%),radial-gradient(700px 500px at 100% 100%,rgba(255,46,136,.18),transparent 60%),#000}
+  #auth[hidden],#pinLock[hidden],#pinSetup[hidden]{display:none}
+  .authbox{width:100%;max-width:380px;text-align:center;margin:0}
+  .authbox form{grid-template-columns:1fr}
+  .authbox input[type=text],.authbox input[type=password]{width:100%}
+  .mut{color:var(--mut);font-size:.9rem}
+  .err{color:var(--out);min-height:1.2em;font-size:.9rem;text-shadow:0 0 8px var(--out)}
+  #aMigWrap{font-size:.85rem;color:var(--mut);text-align:left}
+  #who{color:var(--mut);font-size:.9rem}
+  #pinIn,#psPin,#psPin2{text-align:center;letter-spacing:.4em;font-size:1.2rem}
+  #pinIn::placeholder,#psPin::placeholder,#psPin2::placeholder{letter-spacing:normal;font-size:.9rem}
+  @media(max-width:520px){.stats{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- Connexion nom d'utilisateur + mot de passe -->
+<div id="auth" hidden>
+  <div class="card authbox">
+    <h1>💶 Mes finances</h1>
+    <p class="mut" id="authMsg"></p>
+    <form id="authForm">
+      <input id="aUser" type="text" autocomplete="username" placeholder="Nom d'utilisateur" maxlength="30" required>
+      <input id="aPass" type="password" autocomplete="current-password" placeholder="Mot de passe" required>
+      <input id="aPass2" type="password" autocomplete="new-password" placeholder="Confirmer le mot de passe" hidden>
+      <label id="aMigWrap" hidden><input type="checkbox" id="aMig" checked> Reprendre mes données déjà saisies sur cet appareil</label>
+      <div class="err" id="aErr"></div>
+      <button class="primary" type="submit" id="aBtn">Se connecter</button>
+      <button class="ghost" type="button" id="aSwitch">Créer un compte</button>
+    </form>
+  </div>
+</div>
+
+<!-- Déverrouillage par code PIN -->
+<div id="pinLock" hidden>
+  <div class="card authbox">
+    <h1>🔒 Verrouillé</h1>
+    <p class="mut" id="pinWho"></p>
+    <form id="pinForm">
+      <input id="pinIn" type="password" inputmode="numeric" autocomplete="off" placeholder="Code PIN" maxlength="8" required>
+      <div class="err" id="pinErr"></div>
+      <button class="primary" type="submit" id="pinBtn">Déverrouiller</button>
+      <button class="ghost" type="button" id="pinOther">Utiliser mon mot de passe</button>
+    </form>
+  </div>
+</div>
+
+<!-- Création / modification du code PIN -->
+<div id="pinSetup" hidden>
+  <div class="card authbox">
+    <h1 id="psTitle">Créer un code PIN</h1>
+    <p class="mut">Choisis un code de 4 à 8 chiffres pour déverrouiller l'app rapidement, sans retaper ton nom d'utilisateur et ton mot de passe.</p>
+    <form id="psForm">
+      <input id="psPin" type="password" inputmode="numeric" autocomplete="off" placeholder="Nouveau code PIN" maxlength="8" required>
+      <input id="psPin2" type="password" inputmode="numeric" autocomplete="off" placeholder="Confirmer le code PIN" maxlength="8" required>
+      <div class="err" id="psErr"></div>
+      <button class="primary" type="submit">Enregistrer le code PIN</button>
+      <button class="ghost" type="button" id="psRemove" hidden>Supprimer le code PIN</button>
+      <button class="ghost" type="button" id="psCancel">Plus tard</button>
+    </form>
+  </div>
+</div>
+
+<!-- Modification d'une opération -->
+<div id="editTx" hidden>
+  <div class="card authbox">
+    <h2>Modifier l'opération</h2>
+    <form id="ef">
+      <select id="eType"><option value="out">Dépense</option><option value="in">Revenu</option></select>
+      <input type="number" step="0.01" min="0" id="eAmt" placeholder="Montant (€)" required>
+      <select id="eCat"></select>
+      <input type="date" id="eDate" required>
+      <input type="text" id="eNote" maxlength="80" placeholder="Note (facultatif)">
+      <button class="primary" type="submit">Enregistrer</button>
+      <button class="ghost" type="button" id="eDel">Supprimer cette opération</button>
+      <button class="ghost" type="button" id="eCancel">Annuler</button>
+    </form>
+  </div>
+</div>
+
+<div class="wrap" id="app" hidden>
+  <header>
+    <div style="min-width:0"><h1>💶 Mes finances</h1><div id="who"></div></div>
+    <div class="hbtns">
+      <button class="ghost icon" id="lockBtn" type="button" title="Verrouiller" aria-label="Verrouiller">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+      </button>
+      <button class="ghost icon" id="logout" type="button" title="Déconnexion" aria-label="Déconnexion">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="monthnav">
+    <button class="ghost" id="prev" type="button" aria-label="Mois précédent">‹</button>
+    <input type="month" id="month">
+    <button class="ghost" id="next" type="button" aria-label="Mois suivant">›</button>
+  </div>
+
+  <div class="card banner" id="backupBanner" hidden>
+    <span style="flex:1" id="backupMsg"></span>
+    <button class="primary" id="bkNow" type="button">Exporter maintenant</button>
+    <button class="ghost" id="bkLater" type="button">Plus tard</button>
+  </div>
+
+  <div class="card stats">
+    <div class="stat"><small>Revenus</small><b class="in" id="sIn">0 €</b></div>
+    <div class="stat"><small>Dépenses</small><b class="out" id="sOut">0 €</b></div>
+    <div class="stat"><small>Solde du mois</small><b id="sBal">0 €</b></div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Ajouter une opération</h2>
+      <form id="f">
+        <div class="seg">
+          <label><input type="radio" name="type" value="out" checked><span>Dépense</span></label>
+          <label><input type="radio" name="type" value="in"><span>Revenu</span></label>
+        </div>
+        <input class="full" type="number" step="0.01" min="0" id="amt" placeholder="Montant (€)" required>
+        <select id="cat"></select>
+        <input type="date" id="date" required>
+        <input class="full" type="text" id="note" placeholder="Note (facultatif)" maxlength="80">
+        <button class="primary full" type="submit">Ajouter</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Dépenses par catégorie</h2>
+      <div id="chart"></div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Budgets du mois</h2>
+      <div id="budgets"></div>
+    </div>
+    <div class="card">
+      <h2>Opérations</h2>
+      <ul id="list"></ul>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 id="yearTitle">Vue annuelle</h2>
+    <div id="year"></div>
+  </div>
+
+  <div class="card">
+    <h2>Opérations récurrentes (chaque mois)</h2>
+    <p class="mut" style="margin-top:0">Ajoute un loyer, un abonnement ou un salaire une seule fois : il est créé automatiquement chaque mois, au jour choisi (jour 31 = dernier jour des mois plus courts).</p>
+    <form id="rf" class="rform">
+      <select id="rType"><option value="out">Dépense</option><option value="in">Revenu</option></select>
+      <input type="number" step="0.01" min="0" id="rAmt" placeholder="Montant (€)" required>
+      <select id="rCat"></select>
+      <input type="number" min="1" max="31" id="rDay" placeholder="Jour du mois" required>
+      <input type="text" id="rNote" placeholder="Nom (ex. Loyer)" maxlength="40">
+      <input type="month" id="rStart" min="2000-01" required title="Premier mois">
+      <button class="primary" type="submit">Ajouter</button>
+    </form>
+    <ul id="recList"></ul>
+  </div>
+
+  <div class="card">
+    <h2>Catégories</h2>
+    <p class="mut" style="margin-top:0">Touche le nom d'une catégorie pour la renommer, ✕ pour la supprimer. Les opérations déjà saisies gardent leur catégorie.</p>
+    <p class="mut" style="margin-bottom:6px">Dépenses</p>
+    <div class="chips" id="catsOut"></div>
+    <form class="catform" id="cfOut"><input type="text" id="cOut" maxlength="24" placeholder="Nouvelle catégorie"><button class="primary" type="submit">Ajouter</button></form>
+    <p class="mut" style="margin-bottom:6px">Revenus</p>
+    <div class="chips" id="catsIn"></div>
+    <form class="catform" id="cfIn"><input type="text" id="cIn" maxlength="24" placeholder="Nouvelle catégorie"><button class="primary" type="submit">Ajouter</button></form>
+  </div>
+
+  <div class="card" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <span style="color:var(--mut);flex:1">Tes données sont chiffrées et stockées dans ce navigateur. Exporte une sauvegarde de temps en temps.</span>
+    <button class="ghost" id="pinCfg">🔑 Code PIN</button>
+    <button class="ghost" id="exJson">Exporter (JSON)</button>
+    <button class="ghost" id="exCsv">Exporter (CSV)</button>
+    <button class="ghost" id="imp">Importer (JSON)</button>
+    <input type="file" id="file" accept=".json" hidden>
+  </div>
+</div>
+
+<script>
+const CATS={
+  out:["Logement","Courses","Transport","Restaurants","Loisirs","Santé","Abonnements","Shopping","Autre"],
+  in:["Salaire","Aides","Autre revenu"]
+};
+const COLORS=["#00e5ff","#ff2e88","#39ff88","#ffe600","#a855f7","#ff7a00","#2979ff","#ff4df0","#9fb3c8"];
+const KEY="mes-finances-v1";          // ancienne sauvegarde (avant les comptes)
+const LAST="mes-finances-last";       // dernier utilisateur ayant un code PIN
+const IDLE_MS=2*60*1000;              // verrouillage après 2 minutes
+const MAX_PIN_FAILS=5;
+const BACKUP_DAYS=14;                 // rappel de sauvegarde au bout de 14 jours
+const DEFAULT_CATS=JSON.parse(JSON.stringify(CATS));
+const $=id=>document.getElementById(id);
+let db=null,user=null,key=null,salt=null,pinRec=null,mode="login",pendingUser=null,idleT,q=Promise.resolve();
+
+/* ---------- Base de données locale (IndexedDB) ---------- */
+function idb(){return new Promise((res,rej)=>{const r=indexedDB.open("mes-finances-db",1);r.onupgradeneeded=()=>r.result.createObjectStore("users",{keyPath:"name"});r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+async function idbGet(name){const d=await idb();return new Promise((res,rej)=>{const r=d.transaction("users").objectStore("users").get(name);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+async function idbPut(rec){const d=await idb();return new Promise((res,rej)=>{const t=d.transaction("users","readwrite");t.objectStore("users").put(rec);t.oncomplete=()=>res();t.onerror=()=>rej(t.error)})}
+async function idbCount(){const d=await idb();return new Promise((res,rej)=>{const r=d.transaction("users").objectStore("users").count();r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+async function patchRec(name,extra){const cur=await idbGet(name);if(cur)await idbPut({...cur,...extra})}
+function queue(fn){q=q.then(fn).catch(()=>{});return q}
+
+/* ---------- Chiffrement (PBKDF2 + AES-GCM) ---------- */
+const enc=new TextEncoder(),dec=new TextDecoder();
+const b64=b=>{let s="";new Uint8Array(b).forEach(x=>s+=String.fromCharCode(x));return btoa(s)};
+const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function deriveKey(secret,s,extractable=false){
+  const base=await crypto.subtle.importKey("raw",enc.encode(secret),"PBKDF2",false,["deriveKey"]);
+  return crypto.subtle.deriveKey({name:"PBKDF2",salt:s,iterations:250000,hash:"SHA-256"},base,{name:"AES-GCM",length:256},extractable,["encrypt","decrypt"]);
+}
+async function encrypt(k,str){
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=await crypto.subtle.encrypt({name:"AES-GCM",iv},k,enc.encode(str));
+  return {iv:b64(iv),ct:b64(ct)};
+}
+async function decrypt(k,p){
+  const pt=await crypto.subtle.decrypt({name:"AES-GCM",iv:unb64(p.iv)},k,unb64(p.ct));
+  return JSON.parse(dec.decode(pt));
+}
+
+/* sauvegarde chiffrée dans la base (file d'attente pour éviter les conflits) */
+function save(){
+  if(!key)return;
+  const k=key,u=user,s=salt,snap=JSON.stringify(db);
+  queue(async()=>{const cur=await idbGet(u);await idbPut({...(cur||{}),name:u,salt:b64(s),data:await encrypt(k,snap)})});
+}
+
+/* ---------- Code PIN ---------- */
+function remember(name){try{localStorage.setItem(LAST,name)}catch(e){}}
+function forget(){try{localStorage.removeItem(LAST)}catch(e){}}
+
+async function setPin(pin){
+  const ps=crypto.getRandomValues(new Uint8Array(16));
+  const pk=await deriveKey(pin,ps);
+  const raw=await crypto.subtle.exportKey("raw",key);
+  const rec={salt:b64(ps),wrapped:await encrypt(pk,JSON.stringify(b64(raw)))};
+  const u=user;
+  await queue(()=>patchRec(u,{pin:rec,pinFails:0}));
+  pinRec=rec;remember(u);
+}
+function removePin(){
+  const u=user;pinRec=null;forget();
+  queue(()=>patchRec(u,{pin:null,pinFails:0}));
+}
+function openPinSetup(){
+  const has=!!pinRec;
+  $("psTitle").textContent=has?"Modifier le code PIN":"Créer un code PIN";
+  $("psRemove").hidden=!has;
+  $("psCancel").textContent=has?"Annuler":"Plus tard";
+  $("psPin").value="";$("psPin2").value="";$("psErr").textContent="";
+  $("pinSetup").hidden=false;$("psPin").focus();
+}
+$("psForm").onsubmit=async e=>{
+  e.preventDefault();$("psErr").textContent="";
+  const p=$("psPin").value;
+  try{
+    if(!/^\d{4,8}$/.test(p))throw "Le code PIN doit contenir 4 à 8 chiffres.";
+    if(/^(\d)\1+$/.test(p))throw "Choisis un code moins évident.";
+    if(p!==$("psPin2").value)throw "Les deux codes ne correspondent pas.";
+    await setPin(p);
+    $("pinSetup").hidden=true;
+  }catch(err){$("psErr").textContent=typeof err==="string"?err:"Une erreur est survenue."}
+};
+$("psCancel").onclick=()=>{$("pinSetup").hidden=true};
+$("psRemove").onclick=()=>{removePin();$("pinSetup").hidden=true};
+$("pinCfg").onclick=openPinSetup;
+
+async function pinUnlock(pin){
+  const rec=await idbGet(pendingUser);
+  if(!rec||!rec.pin){forget();showLogin();return}
+  const fails=rec.pinFails||0;
+  let res;
+  try{
+    const pk=await deriveKey(pin,unb64(rec.pin.salt));
+    const rawB64=await decrypt(pk,rec.pin.wrapped);
+    const k=await crypto.subtle.importKey("raw",unb64(rawB64),"AES-GCM",true,["encrypt","decrypt"]);
+    const d=await decrypt(k,rec.data);
+    res={k,d};
+  }catch(_){res=null}
+  if(res){
+    if(fails)await idbPut({...rec,pinFails:0});
+    start(rec.name,res.k,unb64(rec.salt),res.d,rec.pin);
+    return;
+  }
+  const n=fails+1;
+  if(n>=MAX_PIN_FAILS){
+    await idbPut({...rec,pin:null,pinFails:0});forget();
+    showLogin("Trop d'essais incorrects. Connecte-toi avec ton mot de passe.");
+    return;
+  }
+  await idbPut({...rec,pinFails:n});
+  const left=MAX_PIN_FAILS-n;
+  throw "Code PIN incorrect ("+left+" essai"+(left>1?"s":"")+" restant"+(left>1?"s":"")+").";
+}
+$("pinForm").onsubmit=async e=>{
+  e.preventDefault();$("pinErr").textContent="";$("pinBtn").disabled=true;
+  try{await pinUnlock($("pinIn").value)}
+  catch(err){$("pinErr").textContent=typeof err==="string"?err:"Une erreur est survenue.";$("pinIn").value="";$("pinIn").focus()}
+  $("pinBtn").disabled=false;
+};
+$("pinOther").onclick=()=>{const n=pendingUser;showLogin();if(n)$("aUser").value=n;$("aPass").focus()};
+
+/* ---------- Écrans ---------- */
+function hideAll(){$("auth").hidden=true;$("pinLock").hidden=true;$("pinSetup").hidden=true;$("editTx").hidden=true;$("app").hidden=true}
+function showPinScreen(name){
+  hideAll();pendingUser=name;
+  $("pinWho").textContent="👤 "+name;
+  $("pinIn").value="";$("pinErr").textContent="";
+  $("pinLock").hidden=false;$("pinIn").focus();
+}
+function showLogin(msg){
+  hideAll();setMode("login");
+  if(msg)$("aErr").textContent=msg;
+  $("auth").hidden=false;
+}
+
+/* ---------- Authentification ---------- */
+function legacy(){try{return JSON.parse(localStorage.getItem(KEY))}catch(e){return null}}
+function setMode(m){
+  mode=m;const c=m==="create",l=legacy();
+  $("aPass2").hidden=!c;$("aPass2").required=c;
+  $("aMigWrap").hidden=!(c&&l&&Array.isArray(l.tx)&&l.tx.length);
+  $("aBtn").textContent=c?"Créer mon compte":"Se connecter";
+  $("aSwitch").textContent=c?"J'ai déjà un compte":"Créer un compte";
+  $("aPass").autocomplete=c?"new-password":"current-password";
+  $("aErr").textContent="";
+  $("authMsg").textContent=c?"Crée ton compte local. Il reste sur cet appareil.":"Connecte-toi pour accéder à tes finances.";
+}
+$("aSwitch").onclick=()=>setMode(mode==="login"?"create":"login");
+$("authForm").onsubmit=async e=>{
+  e.preventDefault();$("aErr").textContent="";$("aBtn").disabled=true;
+  const name=$("aUser").value.trim().toLowerCase(),pw=$("aPass").value;
+  try{
+    if(!name)throw "Saisis un nom d'utilisateur.";
+    if(mode==="create"){
+      if(pw.length<8)throw "Mot de passe trop court (8 caractères minimum).";
+      if(pw!==$("aPass2").value)throw "Les mots de passe ne correspondent pas.";
+      if(await idbGet(name))throw "Ce nom d'utilisateur existe déjà.";
+      const s=crypto.getRandomValues(new Uint8Array(16)),k=await deriveKey(pw,s,true);
+      let d={tx:[],budgets:{}},migrated=false;
+      if(!$("aMigWrap").hidden&&$("aMig").checked){const old=legacy();if(old&&Array.isArray(old.tx)){d={tx:old.tx,budgets:old.budgets||{}};migrated=true}}
+      await idbPut({name,salt:b64(s),data:await encrypt(k,JSON.stringify(d))});
+      if(migrated){try{localStorage.removeItem(KEY)}catch(_){}}
+      start(name,k,s,d,null);
+    }else{
+      const rec=await idbGet(name);
+      if(!rec)throw "Identifiants incorrects.";
+      const s=unb64(rec.salt),k=await deriveKey(pw,s,true);
+      let d;try{d=await decrypt(k,rec.data)}catch(_){throw "Identifiants incorrects."}
+      if(rec.pinFails)await idbPut({...rec,pinFails:0});
+      start(name,k,s,d,rec.pin||null);
+    }
+  }catch(err){$("aErr").textContent=typeof err==="string"?err:"Une erreur est survenue."}
+  $("aBtn").disabled=false;
+};
+
+function start(name,k,s,d,pin){
+  user=name;key=k;salt=s;db=d;pinRec=pin||null;
+  $("aPass").value="";$("aPass2").value="";$("pinIn").value="";
+  hideAll();$("app").hidden=false;
+  /* demande au navigateur de ne pas effacer les données automatiquement si l'espace manque */
+  try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
+  $("who").textContent="👤 "+name;
+  month=today().slice(0,7);loadCats();fillCats();fillRCats();$("date").value=today();db.rec=db.rec||[];if(applyRecurring())save();render();resetIdle();
+  if(pinRec)remember(name);else openPinSetup();
+}
+/* efface tout ce qui est en mémoire */
+function wipe(){
+  user=null;key=null;salt=null;db=null;pinRec=null;clearTimeout(idleT);
+  CATS.out=DEFAULT_CATS.out.slice();CATS.in=DEFAULT_CATS.in.slice();
+  ["list","budgets","chart","recList"].forEach(i=>{$(i).innerHTML=""});
+  ["sIn","sOut","sBal","who"].forEach(i=>{$(i).textContent=""});
+  hideAll();
+}
+/* verrouillage : demande le code PIN (ou le mot de passe s'il n'y a pas de PIN) */
+function lock(){
+  const name=user,hasPin=!!pinRec;
+  wipe();
+  if(name&&hasPin)showPinScreen(name);else showLogin();
+}
+/* déconnexion : retour à la page de connexion, le PIN n'est plus proposé */
+function logout(){
+  wipe();forget();showLogin();
+  location.replace(location.href);   // recharge la page et remplace l'entrée d'historique
+}
+$("lockBtn").onclick=lock;
+$("logout").onclick=logout;
+
+/* verrouillage automatique après 2 minutes d'inactivité */
+function resetIdle(){clearTimeout(idleT);if(key)idleT=setTimeout(lock,IDLE_MS)}
+["click","keydown","touchstart","mousemove"].forEach(ev=>addEventListener(ev,()=>{if(key)resetIdle()},{passive:true}));
+/* retour arrière / page restaurée depuis le cache : on redemande l'accès */
+addEventListener("pageshow",e=>{if(e.persisted){if(key)lock();else initAuth()}});
+
+async function initAuth(){
+  if(!window.crypto||!crypto.subtle||!window.indexedDB){showLogin("Ce navigateur ne permet pas le chiffrement local.");$("aBtn").disabled=true;return}
+  let n=0,last=null;
+  try{n=await idbCount()}catch(e){}
+  try{last=localStorage.getItem(LAST)}catch(e){}
+  if(last&&n){
+    const rec=await idbGet(last).catch(()=>null);
+    if(rec&&rec.pin){showPinScreen(last);return}
+  }
+  showLogin();
+  if(!n)setMode("create");
+}
+
+/* ---------- Application ---------- */
+const eur=n=>n.toLocaleString("fr-FR",{style:"currency",currency:"EUR"});
+const ymd=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const today=()=>ymd(new Date()); // date locale de l'appareil (et non UTC)
+let month=today().slice(0,7);
+
+/* ---------- Opérations récurrentes ---------- */
+function monthsFrom(a,b){
+  const r=[];let [y,m]=a.split("-").map(Number);const [ey,em]=b.split("-").map(Number);
+  while(y<ey||(y===ey&&m<=em)){r.push(y+"-"+String(m).padStart(2,"0"));m++;if(m>12){m=1;y++}}
+  return r;
+}
+function dayIn(m,day){
+  const [y,mo]=m.split("-").map(Number);
+  const last=new Date(y,mo,0).getDate();
+  return m+"-"+String(Math.min(day,last)).padStart(2,"0");
+}
+/* crée les opérations manquantes, jusqu'au mois en cours ; renvoie true si quelque chose a été ajouté */
+function applyRecurring(){
+  if(!db)return false;
+  db.rec=db.rec||[];
+  const cur=today().slice(0,7);let changed=false;
+  db.rec.forEach(r=>{
+    r.gen=r.gen||[];
+    monthsFrom(r.start,cur).forEach(m=>{
+      if(r.gen.includes(m))return;
+      db.tx.push({id:Date.now()+Math.random(),type:r.type,amount:r.amount,cat:r.cat,date:dayIn(m,r.day),note:r.note||"",recId:r.id});
+      r.gen.push(m);changed=true;
+    });
+  });
+  return changed;
+}
+function fillRCats(){
+  const v=$("rCat").value,t=$("rType").value;
+  $("rCat").innerHTML=CATS[t].map(c=>`<option>${esc(c)}</option>`).join("");
+  if(v&&CATS[t].includes(v))$("rCat").value=v;
+}
+$("rType").onchange=fillRCats;
+$("rf").onsubmit=e=>{
+  e.preventDefault();
+  const a=parseFloat($("rAmt").value),day=parseInt($("rDay").value,10),start=$("rStart").value;
+  if(!(a>0)||!(day>=1&&day<=31)||!start||start<"2000-01")return;
+  db.rec=db.rec||[];
+  db.rec.push({id:"r"+Date.now()+Math.random().toString(36).slice(2,6),type:$("rType").value,amount:a,cat:$("rCat").value,note:$("rNote").value.trim(),day,start,gen:[]});
+  applyRecurring();save();
+  $("rAmt").value="";$("rNote").value="";$("rDay").value="";
+  render();
+};
+function renderRec(){
+  const list=db.rec||[];
+  $("recList").innerHTML=list.length?list.map(r=>`
+    <li class="tx"><div class="m"><div>${esc(r.note||r.cat)} <small>· ${esc(r.cat)}</small></div><small>le ${r.day} de chaque mois · depuis ${r.start.slice(5)}/${r.start.slice(0,4)}</small></div>
+    <b class="${r.type}">${r.type==="in"?"+":"−"}${eur(r.amount)}</b>
+    <button class="x" data-r="${esc(r.id)}" title="Arrêter">✕</button></li>`).join(""):`<div class="empty">Aucune opération récurrente</div>`;
+  $("recList").querySelectorAll(".x").forEach(b=>b.onclick=()=>{
+    if(!confirm("Arrêter cette opération récurrente ? Les opérations déjà créées sont conservées."))return;
+    db.rec=db.rec.filter(r=>r.id!==b.dataset.r);save();render();
+  });
+}
+
+/* ---------- Catégories personnalisées ---------- */
+function loadCats(){
+  const c=(db&&db.cats)||{};
+  CATS.out=(Array.isArray(c.out)&&c.out.length?c.out:DEFAULT_CATS.out).slice();
+  CATS.in=(Array.isArray(c.in)&&c.in.length?c.in:DEFAULT_CATS.in).slice();
+}
+function colorOf(c){const i=CATS.out.indexOf(c);return i<0?COLORS[COLORS.length-1]:COLORS[i%COLORS.length]}
+function persistCats(){
+  db.cats={out:CATS.out.slice(),in:CATS.in.slice()};
+  save();fillCats();fillRCats();render();
+}
+function renderCats(){
+  [["out","catsOut"],["in","catsIn"]].forEach(([t,id])=>{
+    $(id).innerHTML=CATS[t].map(c=>`<span class="chip"><span class="nm" data-t="${t}" data-c="${esc(c)}">${esc(c)}</span><button type="button" data-t="${t}" data-c="${esc(c)}" title="Supprimer">✕</button></span>`).join("");
+    $(id).querySelectorAll(".nm").forEach(el=>el.onclick=()=>renameCat(el.dataset.t,el.dataset.c));
+    $(id).querySelectorAll("button").forEach(el=>el.onclick=()=>deleteCat(el.dataset.t,el.dataset.c));
+  });
+}
+function renameCat(t,old){
+  const n=(prompt("Nouveau nom de la catégorie :",old)||"").trim().slice(0,24);
+  if(!n||n===old)return;
+  if(CATS[t].some(c=>c!==old&&c.toLowerCase()===n.toLowerCase())){alert("Cette catégorie existe déjà.");return}
+  const i=CATS[t].indexOf(old);if(i<0)return;
+  CATS[t][i]=n;
+  db.tx.forEach(x=>{if(x.type===t&&x.cat===old)x.cat=n});
+  (db.rec||[]).forEach(r=>{if(r.type===t&&r.cat===old)r.cat=n});
+  if(t==="out"&&db.budgets[old]!==undefined){db.budgets[n]=db.budgets[old];delete db.budgets[old]}
+  persistCats();
+}
+function deleteCat(t,c){
+  if(CATS[t].length<=1){alert("Il faut garder au moins une catégorie.");return}
+  if(!confirm("Supprimer la catégorie « "+c+" » ? Les opérations déjà saisies gardent ce nom."))return;
+  CATS[t]=CATS[t].filter(x=>x!==c);
+  delete db.budgets[c];
+  persistCats();
+}
+function addCat(t,inputId){
+  const n=$(inputId).value.trim().slice(0,24);
+  if(!n)return;
+  if(CATS[t].some(c=>c.toLowerCase()===n.toLowerCase())){alert("Cette catégorie existe déjà.");return}
+  CATS[t].push(n);$(inputId).value="";
+  persistCats();
+}
+$("cfOut").onsubmit=e=>{e.preventDefault();addCat("out","cOut")};
+$("cfIn").onsubmit=e=>{e.preventDefault();addCat("in","cIn")};
+
+/* ---------- Modification d'une opération ---------- */
+let editId=null;
+function fillECats(sel){
+  const list=CATS[$("eType").value].slice();
+  if(sel&&!list.includes(sel))list.push(sel);   // catégorie supprimée mais encore utilisée
+  $("eCat").innerHTML=list.map(c=>`<option>${esc(c)}</option>`).join("");
+  if(sel)$("eCat").value=sel;
+}
+function openEdit(id){
+  const t=db.tx.find(x=>String(x.id)===id);
+  if(!t)return;
+  editId=id;
+  $("eType").value=t.type;fillECats(t.cat);
+  $("eAmt").value=t.amount;$("eDate").value=t.date;$("eNote").value=t.note||"";
+  $("editTx").hidden=false;$("eAmt").focus();
+}
+$("eType").onchange=()=>fillECats();
+$("ef").onsubmit=e=>{
+  e.preventDefault();
+  const t=db.tx.find(x=>String(x.id)===editId),a=parseFloat($("eAmt").value);
+  if(!t||!(a>0)||!$("eDate").value)return;
+  t.type=$("eType").value;t.amount=a;t.cat=$("eCat").value;t.date=$("eDate").value;t.note=$("eNote").value.trim();
+  save();$("editTx").hidden=true;
+  month=t.date.slice(0,7);render();
+};
+$("eDel").onclick=()=>{
+  if(!confirm("Supprimer cette opération ?"))return;
+  db.tx=db.tx.filter(x=>String(x.id)!==editId);
+  save();$("editTx").hidden=true;render();
+};
+$("eCancel").onclick=()=>{$("editTx").hidden=true};
+
+/* ---------- Vue annuelle ---------- */
+function renderYear(){
+  const y=month.slice(0,4);
+  const inc=Array(12).fill(0),out=Array(12).fill(0);
+  db.tx.forEach(t=>{if(t.date.slice(0,4)===y){const m=+t.date.slice(5,7)-1;(t.type==="in"?inc:out)[m]+=t.amount}});
+  const max=Math.max(1,...inc,...out),H=100,base=120,L="JFMAMJJASOND";
+  let bars="";
+  for(let m=0;m<12;m++){
+    const x=4+m*28,mk=y+"-"+String(m+1).padStart(2,"0");
+    const hi=Math.round(inc[m]/max*H),ho=Math.round(out[m]/max*H);
+    bars+=`<g data-m="${mk}" style="cursor:pointer">
+      ${mk===month?`<rect x="${x}" y="8" width="26" height="130" rx="4" fill="rgba(0,229,255,.12)" stroke="rgba(0,229,255,.5)"/>`:""}
+      <rect x="${x+3}" y="${base-hi}" width="9" height="${hi}" rx="2" fill="#39ff88"/>
+      <rect x="${x+14}" y="${base-ho}" width="9" height="${ho}" rx="2" fill="#ff2e88"/>
+      <text x="${x+13}" y="134" text-anchor="middle" font-size="9">${L[m]}</text>
+      <rect x="${x}" y="8" width="26" height="130" fill="transparent"><title>${mk} · Revenus ${eur(inc[m])} · Dépenses ${eur(out[m])}</title></rect>
+    </g>`;
+  }
+  const ti=inc.reduce((a,b)=>a+b,0),to=out.reduce((a,b)=>a+b,0);
+  const nm=inc.filter((v,i)=>v||out[i]).length,avg=to/Math.max(1,nm);
+  $("yearTitle").textContent="Vue annuelle · "+y;
+  $("year").innerHTML=`<svg viewBox="0 0 340 142" style="width:100%">${bars}</svg>
+    <div class="legend"><span style="--c:#39ff88">Revenus</span><span style="--c:#ff2e88">Dépenses</span><span class="mut">Touche un mois pour l'afficher</span></div>
+    <div class="ystats">
+      <div class="stat"><small>Revenus</small><b class="in">${eur(ti)}</b></div>
+      <div class="stat"><small>Dépenses</small><b class="out">${eur(to)}</b></div>
+      <div class="stat"><small>Solde</small><b class="${ti-to>=0?"in":"out"}">${eur(ti-to)}</b></div>
+    </div>
+    <p class="mut" style="margin-bottom:0">Dépenses moyennes : ${eur(avg)} par mois</p>`;
+  $("year").querySelectorAll("[data-m]").forEach(g=>g.onclick=()=>{month=g.dataset.m;render()});
+}
+
+/* ---------- Rappel de sauvegarde ---------- */
+function daysBetween(a,b){return Math.round((new Date(b+"T00:00")-new Date(a+"T00:00"))/864e5)}
+function renderBackup(){
+  const b=$("backupBanner");
+  if(!db||!db.tx.length){b.hidden=true;return}
+  const t=today();
+  if(db.snooze&&db.snooze>t){b.hidden=true;return}
+  const last=db.lastExport,days=last?daysBetween(last,t):null;
+  if(last&&days<BACKUP_DAYS){b.hidden=true;return}
+  $("backupMsg").textContent=last
+    ?"💾 Dernière sauvegarde il y a "+days+" jour"+(days>1?"s":"")+". Pense à exporter ton JSON."
+    :"💾 Tu n'as pas encore fait de sauvegarde. Exporte ton JSON pour ne rien perdre.";
+  b.hidden=false;
+}
+$("bkNow").onclick=()=>$("exJson").click();
+$("bkLater").onclick=()=>{const d=new Date();d.setDate(d.getDate()+3);db.snooze=ymd(d);save();renderBackup()};
+
+function type(){return document.querySelector('input[name=type]:checked').value}
+function fillCats(){
+  const v=$("cat").value;
+  $("cat").innerHTML=CATS[type()].map(c=>`<option>${esc(c)}</option>`).join("");
+  if(v&&CATS[type()].includes(v))$("cat").value=v;
+}
+document.querySelectorAll('input[name=type]').forEach(r=>r.onchange=fillCats);
+
+$("f").onsubmit=e=>{
+  e.preventDefault();
+  const a=parseFloat($("amt").value);
+  if(!(a>0))return;
+  db.tx.push({id:Date.now()+Math.random(),type:type(),amount:a,cat:$("cat").value,date:$("date").value,note:$("note").value.trim()});
+  save();
+  $("amt").value="";$("note").value="";
+  month=$("date").value.slice(0,7);
+  render();$("amt").focus();
+};
+
+function shift(d){
+  let [y,m]=month.split("-").map(Number);m+=d;
+  if(m<1){m=12;y--}if(m>12){m=1;y++}
+  month=`${y}-${String(m).padStart(2,"0")}`;render();
+}
+$("prev").onclick=()=>shift(-1);$("next").onclick=()=>shift(1);
+$("month").onchange=e=>{if(e.target.value){month=e.target.value;render()}};
+
+function render(){
+  if(!db)return;
+  $("month").value=month;renderRec();renderBackup();renderYear();renderCats();
+  const tx=db.tx.filter(t=>t.date.startsWith(month)).sort((a,b)=>b.date.localeCompare(a.date));
+  const inc=tx.filter(t=>t.type==="in").reduce((s,t)=>s+t.amount,0);
+  const out=tx.filter(t=>t.type==="out").reduce((s,t)=>s+t.amount,0);
+  $("sIn").textContent=eur(inc);$("sOut").textContent=eur(out);
+  const bal=inc-out;$("sBal").textContent=eur(bal);
+  $("sBal").className=bal>=0?"in":"out";
+
+  // liste
+  $("list").innerHTML=tx.length?tx.map(t=>`
+    <li class="tx"><div class="m"><div>${t.recId?"↻ ":""}${esc(t.cat)}${t.note?" · "+esc(t.note):""}</div><small>${new Date(t.date+"T00:00").toLocaleDateString("fr-FR",{day:"numeric",month:"short"})}</small></div>
+    <b class="${t.type}">${t.type==="in"?"+":"−"}${eur(t.amount)}</b>
+    <button class="x" data-e="${t.id}" title="Modifier">✎</button><button class="x" data-id="${t.id}" title="Supprimer">✕</button></li>`).join(""):`<div class="empty">Aucune opération ce mois-ci</div>`;
+  $("list").querySelectorAll(".x[data-id]").forEach(b=>b.onclick=()=>{db.tx=db.tx.filter(t=>String(t.id)!==b.dataset.id);save();render()});
+  $("list").querySelectorAll(".x[data-e]").forEach(b=>b.onclick=()=>openEdit(b.dataset.e));
+
+  // dépenses par catégorie
+  const by={};tx.filter(t=>t.type==="out").forEach(t=>by[t.cat]=(by[t.cat]||0)+t.amount);
+
+  // budgets
+  $("budgets").innerHTML=CATS.out.map(c=>{
+    const b=db.budgets[c]||0,s=by[c]||0,p=b?Math.min(100,s/b*100):0;
+    return `<div class="bud"><div class="row"><span>${esc(c)}</span><span>${eur(s)} / <input type="number" min="0" step="10" value="${b||""}" placeholder="budget" data-c="${esc(c)}"></span></div>
+    <div class="bar"><i class="${b&&s>b?"over":""}" style="width:${p}%"></i></div></div>`}).join("");
+  $("budgets").querySelectorAll("input").forEach(i=>i.onchange=()=>{db.budgets[i.dataset.c]=parseFloat(i.value)||0;save();render()});
+
+  // graphique en anneau
+  const ent=Object.entries(by).sort((a,b)=>b[1]-a[1]);
+  if(!ent.length){$("chart").innerHTML=`<div class="empty">Pas encore de dépenses</div>`;return}
+  let acc=0;const R=60,C=2*Math.PI*R;
+  const arcs=ent.map(([c,v])=>{
+    const len=v/out*C,col=colorOf(c);
+    const el=`<circle r="${R}" cx="80" cy="80" fill="none" stroke="${col}" stroke-width="26" stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-acc}" transform="rotate(-90 80 80)"/>`;
+    acc+=len;return el}).join("");
+  $("chart").innerHTML=`<svg viewBox="0 0 160 160" style="width:100%;max-width:200px;display:block;margin:0 auto">${arcs}
+    <text x="80" y="84" text-anchor="middle" font-size="14" font-weight="700">${eur(out)}</text></svg>
+    <div class="legend">${ent.map(([c,v])=>`<span style="--c:${colorOf(c)}">${esc(c)} ${Math.round(v/out*100)}%</span>`).join("")}</div>`;
+}
+function esc(s){return s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+
+// export / import
+function dl(name,content,mime){
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([content],{type:mime}));a.download=name;a.click();
+}
+$("exJson").onclick=()=>{
+  db.lastExport=today();delete db.snooze;
+  dl("mes-finances-"+today()+".json",JSON.stringify(db,null,2),"application/json");
+  save();renderBackup();
+};
+$("exCsv").onclick=()=>dl("mes-finances.csv","\ufeffDate;Type;Catégorie;Montant;Note\n"+db.tx.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(t=>[t.date,t.type==="in"?"Revenu":"Dépense",t.cat,String(t.amount).replace(".",","),'"'+t.note.replace(/"/g,'""')+'"'].join(";")).join("\n"),"text/csv");
+$("imp").onclick=()=>$("file").click();
+$("file").onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{try{const d=JSON.parse(r.result);if(Array.isArray(d.tx)){db={tx:d.tx,budgets:d.budgets||{},rec:Array.isArray(d.rec)?d.rec:[],cats:d.cats,lastExport:d.lastExport};loadCats();fillCats();fillRCats();applyRecurring();save();render()}else alert("Fichier invalide")}catch(_){alert("Fichier invalide")}};
+  r.readAsText(f);e.target.value="";
+};
+
+$("date").value=today();fillCats();fillRCats();$("rStart").value=today().slice(0,7);initAuth();
+
+/* ---------- Installation / hors ligne (PWA) ---------- */
+if("serviceWorker" in navigator){
+  addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").catch(()=>{})});
+}
+</script>
+</body>
+</html>
