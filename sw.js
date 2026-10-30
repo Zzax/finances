@@ -1,6 +1,6 @@
 /* Service worker : met l'app en cache pour qu'elle fonctionne hors ligne.
    Aucune donnée personnelle n'y transite : elles restent chiffrées dans IndexedDB sur l'appareil. */
-const CACHE = "mes-finances-v2";
+const CACHE = "mes-finances-v3";
 const FILES = [
   "./",
   "./index.html",
